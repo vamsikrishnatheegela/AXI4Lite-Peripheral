@@ -1,0 +1,11 @@
+sim_build/
+*.vcd
+*.fst
+*.lxt
+*.log
+*.out
+*.vvp
+*.jou
+*.wlf
+transcript
+.DS_Store
