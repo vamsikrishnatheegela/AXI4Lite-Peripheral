@@ -68,6 +68,75 @@ module tb_axi4lite_peripheral;
     end
   endtask
 
+  task automatic read_stall_tx(input logic [31:0] addr,
+                               input logic [31:0] expected_data,
+                               input logic [1:0] expected_resp);
+    integer stall_cycles;
+    begin
+      @(negedge aclk);
+      s_axi_araddr = addr;
+      s_axi_arvalid = 1'b1;
+      s_axi_rready = 1'b0;
+      do @(posedge aclk); while (!s_axi_arready);
+      @(negedge aclk);
+      s_axi_arvalid = 1'b0;
+      // Keep RREADY low to apply backpressure to the DUT.
+      do @(posedge aclk); while (!s_axi_rvalid);
+      for (stall_cycles = 0; stall_cycles < 3; stall_cycles = stall_cycles + 1) begin
+        if (s_axi_rvalid !== 1'b1 ||
+            s_axi_rdata !== expected_data ||
+            s_axi_rresp !== expected_resp)
+          $fatal(1, "READ response changed while stalled at addr=%h", addr);
+        @(posedge aclk);
+      end
+      checks = checks + 1;
+      @(negedge aclk);
+      s_axi_rready = 1'b1;
+      @(posedge aclk);
+      @(negedge aclk);
+      s_axi_rready = 1'b0;
+    end
+  endtask
+
+  task automatic write_stall_tx(input logic [31:0] addr,
+                                input logic [31:0] data,
+                                input logic [3:0] strb,
+                                input logic [1:0] expected_resp);
+    integer stall_cycles;
+    bit aw_done, w_done;
+    begin
+      aw_done = 0;
+      w_done = 0;
+      @(negedge aclk);
+      s_axi_awaddr = addr;
+      s_axi_wdata = data;
+      s_axi_wstrb = strb;
+      s_axi_awvalid = 1'b1;
+      s_axi_wvalid = 1'b1;
+      s_axi_bready = 1'b0;
+      while (!aw_done || !w_done) begin
+        @(posedge aclk);
+        if (s_axi_awvalid && s_axi_awready) aw_done = 1;
+        if (s_axi_wvalid && s_axi_wready) w_done = 1;
+        @(negedge aclk);
+        if (aw_done) s_axi_awvalid = 1'b0;
+        if (w_done) s_axi_wvalid = 1'b0;
+      end
+      do @(posedge aclk); while (!s_axi_bvalid);
+      for (stall_cycles = 0; stall_cycles < 3; stall_cycles = stall_cycles + 1) begin
+        if (s_axi_bvalid !== 1'b1 || s_axi_bresp !== expected_resp)
+          $fatal(1, "WRITE response changed while stalled at addr=%h", addr);
+        @(posedge aclk);
+      end
+      checks = checks + 1;
+      @(negedge aclk);
+      s_axi_bready = 1'b1;
+      @(posedge aclk);
+      @(negedge aclk);
+      s_axi_bready = 1'b0;
+    end
+  endtask
+
   initial begin
     repeat (3) @(posedge aclk);
     @(negedge aclk); aresetn = 1;
@@ -84,6 +153,12 @@ module tb_axi4lite_peripheral;
     read_tx(32'h04, 32'h0000_0001, 2'b00);
     read_tx(32'h10, 32'h0000_0000, 2'b11);
     write_tx(32'h10, 32'hCAFE_BABE, 4'hF, 0, 2'b11);
+
+    // Verify that response VALID and payload remain stable under backpressure.
+    write_stall_tx(32'h08, 32'hA5A5_5A5A, 4'hF, 2'b00);
+    read_stall_tx(32'h08, 32'hA5A5_5A5A, 2'b00);
+    read_stall_tx(32'h10, 32'h0000_0000, 2'b11);
+
     $display("PASS: %0d transaction checks completed", checks);
     $finish;
   end
