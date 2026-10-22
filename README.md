@@ -18,23 +18,23 @@ A synthesizable memory-mapped peripheral and self-checking SystemVerilog testben
 The design supports byte write strobes on writable registers, independently arriving write address and data channels, OKAY responses for valid accesses, and DECERR for unmapped addresses. Writes to read-only registers are ignored.
 
 ## Run
-Install Icarus Verilog (iverilog and vvp), then run:
+Install Icarus Verilog (`iverilog` and `vvp`), then run:
 
-    ./scripts/run_tests.sh
+    bash scripts/run_tests.sh
 
 This project is educational and is not represented as production-qualified IP. Run it in your target simulator and review the RTL before using it in a real design. Full concurrent assertion support varies by simulator.
 
 ## Layout
-- rtl/axi4lite_peripheral.sv — synthesizable peripheral RTL
-- tb/tb_axi4lite_peripheral.sv — self-checking directed testbench
-- tb/axi4lite_assertions.sv — protocol assertion module
-- docs/ — specification, architecture, verification plan
-- scripts/run_tests.sh — simulation runner
+- `rtl/axi4lite_peripheral.sv` — synthesizable peripheral RTL
+- `tb/tb_axi4lite_peripheral.sv` — self-checking directed testbench
+- `tb/axi4lite_assertions.sv` — protocol assertion module
+- `docs/` — specification, architecture, verification plan, learning roadmap
+- `scripts/run_tests.sh` — simulation runner
 
 ## Suggested extensions
 1. Add constrained-random traffic and coverage groups.
-2. Develop a UVM agent, sequences, monitor, and scoreboard.
+2. Develop a UVM agent, sequences, monitor, scoreboard, and sequences.
 3. Add synthesis and timing reports using a chosen RTL flow.
 
 ## License
-MIT. See LICENSE.
+MIT. See `LICENSE`.
