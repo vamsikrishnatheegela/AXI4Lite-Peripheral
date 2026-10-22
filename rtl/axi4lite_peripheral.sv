@@ -96,8 +96,14 @@ module axi4lite_peripheral #(
                             if (effective_wstrb[i])
                                 scratch_reg[i*8 +: 8] <= effective_wdata[i*8 +: 8];
                     end
-                    ADDR_STATUS, ADDR_VERSION: begin
-                        // Read-only registers: ignore writes and return OKAY.
+                    ADDR_STATUS: begin
+                        // MUTATION: STATUS incorrectly accepts writes into CONTROL.
+                        for (i = 0; i < DATA_WIDTH/8; i = i + 1)
+                            if (effective_wstrb[i])
+                                control_reg[i*8 +: 8] <= effective_wdata[i*8 +: 8];
+                    end
+                    ADDR_VERSION: begin
+                        // Read-only register: ignore writes and return OKAY.
                     end
                     default: s_axi_bresp <= RESP_DECERR;
                 endcase
