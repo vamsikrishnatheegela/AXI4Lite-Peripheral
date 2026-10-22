@@ -42,3 +42,9 @@ for i in "${!expected_messages[@]}"; do
   echo "PASS: detected violation on ${expected_messages[$i]#PROTOCOL: }"
 done
 echo "PASS: all five AXI channel protocol negative tests detected the injected violations."
+
+echo
+echo "=== Reset corner-case regression ==="
+iverilog -g2012 -s tb_reset_corner_cases -o sim_build/tb_reset_corner_cases.vvp \
+  rtl/axi4lite_peripheral.sv tb/tb_reset_corner_cases.sv
+vvp sim_build/tb_reset_corner_cases.vvp
