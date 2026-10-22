@@ -88,13 +88,11 @@ module axi4lite_peripheral #(
                 case (effective_awaddr)
                     ADDR_CONTROL: begin
                         for (i = 0; i < DATA_WIDTH/8; i = i + 1)
-                            if (effective_wstrb[i])
-                                control_reg[i*8 +: 8] <= effective_wdata[i*8 +: 8];
+                            control_reg[i*8 +: 8] <= effective_wdata[i*8 +: 8]; // MUTATION: ignores WSTRB
                     end
                     ADDR_SCRATCH: begin
                         for (i = 0; i < DATA_WIDTH/8; i = i + 1)
-                            if (effective_wstrb[i])
-                                scratch_reg[i*8 +: 8] <= effective_wdata[i*8 +: 8];
+                            scratch_reg[i*8 +: 8] <= effective_wdata[i*8 +: 8]; // MUTATION: ignores WSTRB
                     end
                     ADDR_STATUS, ADDR_VERSION: begin
                         // Read-only registers: ignore writes and return OKAY.
