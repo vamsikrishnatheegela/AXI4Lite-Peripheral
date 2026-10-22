@@ -38,6 +38,7 @@ module tb_axi4lite_peripheral;
   logic [31:0] model_scratch = 32'h0000_0000;
   logic [31:0] model_read_data;
   integer lane;
+  integer byte_lane;
 
   function automatic logic [31:0] model_value(input logic [31:0] addr);
     case (addr)
@@ -266,8 +267,26 @@ module tb_axi4lite_peripheral;
     read_tx(32'h08, 32'hDEAD_BEEF, 2'b00);
     write_tx(32'h04, 32'hFFFF_FFFF, 4'hF, 0, 2'b00);
     read_tx(32'h04, 32'h0000_0001, 2'b00);
+    // Writes to both read-only registers must be accepted but have no effect.
+    write_tx(32'h0C, 32'hDEAD_C0DE, 4'hF, 1, 2'b00);
+    read_tx(32'h0C, 32'h0001_0000, 2'b00);
     read_tx(32'h10, 32'h0000_0000, 2'b11);
     write_tx(32'h10, 32'hCAFE_BABE, 4'hF, 0, 2'b11);
+
+    // Exercise each individual byte lane, then all-zero WSTRB.
+    write_tx(32'h08, 32'h1122_3344, 4'hF, 0, 2'b00);
+    for (byte_lane = 0; byte_lane < 4; byte_lane = byte_lane + 1) begin
+      write_tx(32'h08, 32'hA1B2_C3D4, (4'b0001 << byte_lane), byte_lane[0], 2'b00);
+      case (byte_lane)
+        0: read_tx(32'h08, 32'h1122_33D4, 2'b00);
+        1: read_tx(32'h08, 32'h1122_C3D4, 2'b00);
+        2: read_tx(32'h08, 32'h11B2_C3D4, 2'b00);
+        3: read_tx(32'h08, 32'hA1B2_C3D4, 2'b00);
+      endcase
+    end
+    write_tx(32'h08, 32'hFFFF_FFFF, 4'h0, 1, 2'b00);
+    // A zero strobe must leave every byte unchanged.
+    read_tx(32'h08, 32'hA1B2_C3D4, 2'b00);
 
     // Verify that response VALID and payload remain stable under backpressure.
     write_stall_tx(32'h08, 32'hA5A5_5A5A, 4'hF, 2'b00);
