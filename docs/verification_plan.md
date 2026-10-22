@@ -21,7 +21,7 @@ The Icarus-compatible testbench prints counters for read/write address categorie
 The simulation must complete without `$fatal`, and the testbench must print a PASS summary. Each read checks RRESP and RDATA against both the directed expectation and the reference model; each write checks BRESP. Response-stall tests check response VALID and payload stability.
 
 ## Protocol monitor and assertions
-The shared module `tb/axi4lite_protocol_monitor.sv` checks AW/W/AR VALID persistence and payload stability, plus B/R response stability while stalled. The regression script runs a separate negative test that deliberately drops AWVALID while stalled and passes only when the monitor emits the expected protocol failure. `tb/axi4lite_assertions.sv` separately contains example concurrent SVA properties; the run script does not compile that file because concurrent SVA support differs across simulators.
+The shared module `tb/axi4lite_protocol_monitor.sv` checks AW/W/AR VALID persistence and payload stability, plus B/R response stability while stalled. The regression script runs five parameterized negative tests: AWVALID drops, WDATA changes, ARVALID drops, BRESP changes, and RDATA changes while their channels are stalled. Each test passes only when the monitor emits the corresponding expected protocol failure. `tb/axi4lite_assertions.sv` separately contains example concurrent SVA properties; the run script does not compile that file because concurrent SVA support differs across simulators.
 
 ## Known gaps / future work
 - Constrained-random transactions and coverage closure.
@@ -29,4 +29,5 @@ The shared module `tb/axi4lite_protocol_monitor.sv` checks AW/W/AR VALID persist
 - Reset during an in-flight transaction.
 - UVM agent, sequencer, monitor, scoreboard, and sequences.
 - Formal protocol checks and integration with an AXI VIP.
-- Negative-test coverage currently injects an AW-channel violation; add corresponding injected violations for W, AR, B, and R channels.
+- Reset during an in-flight transaction remains to be tested.
+- Randomized backpressure and broader constrained-random traffic remain to be added.
