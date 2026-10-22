@@ -3,10 +3,10 @@
 ## Directed scenarios
 - Reset values of CONTROL, STATUS, and VERSION.
 - Full-word write/readback of CONTROL.
-- Partial byte write using WSTRB.
+- Partial byte write using WSTRB, including each individual byte lane and zero WSTRB (which must leave the register unchanged).
 - Write address before write data and write data before write address.
 - Full-word write/readback of SCRATCH.
-- Write to read-only STATUS followed by readback.
+- Write to read-only STATUS and VERSION followed by readback; values must remain unchanged.
 - Read and write to an unmapped address; expect DECERR.
 - Hold BREADY low for multiple cycles and check BVALID/BRESP stability.
 - Hold RREADY low for multiple cycles and check RVALID/RDATA/RRESP stability, for both OKAY and DECERR responses.
