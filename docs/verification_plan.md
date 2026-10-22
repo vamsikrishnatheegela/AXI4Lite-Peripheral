@@ -23,15 +23,13 @@ The simulation must complete without `$fatal`, and the testbench must print a PA
 ## Protocol monitor and assertions
 The shared module `tb/axi4lite_protocol_monitor.sv` checks AW/W/AR VALID persistence and payload stability, plus B/R response stability while stalled. The regression script runs five parameterized negative tests: AWVALID drops, WDATA changes, ARVALID drops, BRESP changes, and RDATA changes while their channels are stalled. Each test passes only when the monitor emits the corresponding expected protocol failure. `tb/axi4lite_assertions.sv` separately contains example concurrent SVA properties; the run script does not compile that file because concurrent SVA support differs across simulators.
 
-## Known gaps / future work
-- Constrained-random transactions and coverage closure.
-- Randomized backpressure and longer randomized stall durations.
-- Reset while BVALID is stalled, then verify response clearing and writable-register reset.
-- Reset while RVALID is stalled, then verify response clearing.
-- Reset after accepting AW but before W; verify the stale address cannot pair with post-reset write data.
-- UVM agent, sequencer, monitor, scoreboard, and sequences.
-- Formal protocol checks and integration with an AXI VIP.
-- Randomized backpressure and broader constrained-random traffic remain to be added.
+## Remaining gaps / future work
+- Broader constrained-random traffic and coverage closure; current portable counters and deterministic stress are useful but do not constitute a complete coverage model.
+- More AXI protocol corner cases, including reset at additional handshake boundaries and simultaneous independent read/write activity.
+- Run `tb/axi4lite_assertions.sv` in a simulator with concurrent SVA support.
+- Optional UVM agent, sequencer, reusable monitor/scoreboard, and sequences.
+- Optional formal protocol checks and integration with a standards-based AXI verification IP.
+- Synthesis, lint, and timing reports in a selected RTL tool flow.
 
 ## Reset corner-case regression
 `tb/tb_reset_corner_cases.sv` separately checks reset while write and read responses are stalled, confirms response VALID clears, checks CONTROL returns to its reset value, and verifies a pre-reset AW cannot pair with post-reset W data. The top-level script runs this regression after the functional and protocol-negative tests.
