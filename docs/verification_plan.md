@@ -35,3 +35,7 @@ The shared module `tb/axi4lite_protocol_monitor.sv` checks AW/W/AR VALID persist
 
 ## Reset corner-case regression
 `tb/tb_reset_corner_cases.sv` separately checks reset while write and read responses are stalled, confirms response VALID clears, checks CONTROL returns to its reset value, and verifies a pre-reset AW cannot pair with post-reset W data. The top-level script runs this regression after the functional and protocol-negative tests.
+
+
+## Randomized stress regression
+`tb/tb_randomized_stress.sv` performs 50 reproducible writes to CONTROL/SCRATCH with randomized AW/W arrival delays, AW-first/W-first ordering, WSTRB patterns, and B/R response backpressure. Each write is followed by readback of both writable registers against an independent reference model. The script runs this test after the functional, protocol-negative, and reset regressions.
