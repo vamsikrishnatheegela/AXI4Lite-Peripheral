@@ -48,3 +48,9 @@ echo "=== Reset corner-case regression ==="
 iverilog -g2012 -s tb_reset_corner_cases -o sim_build/tb_reset_corner_cases.vvp \
   rtl/axi4lite_peripheral.sv tb/tb_reset_corner_cases.sv
 vvp sim_build/tb_reset_corner_cases.vvp
+
+echo
+echo "=== Randomized stress regression ==="
+iverilog -g2012 -s tb_randomized_stress -o sim_build/tb_randomized_stress.vvp \
+  rtl/axi4lite_peripheral.sv tb/tb_randomized_stress.sv
+vvp sim_build/tb_randomized_stress.vvp
