@@ -99,7 +99,7 @@ module axi4lite_peripheral #(
                     ADDR_STATUS, ADDR_VERSION: begin
                         // Read-only registers: ignore writes and return OKAY.
                     end
-                    default: s_axi_bresp <= RESP_DECERR;
+                    default: s_axi_bresp <= RESP_OKAY; // MUTATION: unmapped writes incorrectly return OKAY.
                 endcase
                 aw_pending <= 1'b0;
                 w_pending <= 1'b0;
