@@ -1,8 +1,11 @@
 `timescale 1ns/1ps
 
-// Negative test: deliberately violate AW channel stability while stalled.
+// Parameterized negative tests for all five AXI4-Lite channels.
+// Each run deliberately changes VALID or its payload while stalled.
 // The expected outcome is a $fatal from axi4lite_protocol_monitor.
-module tb_protocol_monitor_negative;
+module tb_protocol_monitor_negative #(
+  parameter integer VIOLATION = 0
+);
   logic aclk = 0;
   logic aresetn = 0;
   logic awvalid = 0;
@@ -38,13 +41,26 @@ module tb_protocol_monitor_negative;
     repeat (2) @(negedge aclk);
     aresetn = 1;
     @(negedge aclk);
-    awvalid = 1;
-    awaddr = 32'h0000_0008;
-    awready = 0; // Address is stalled.
+    // Assert the selected channel while READY is low.
+    case (VIOLATION)
+      0: begin awvalid = 1; awaddr = 32'h8; awready = 0; end
+      1: begin wvalid = 1; wdata = 32'h1234; wstrb = 4'hF; wready = 0; end
+      2: begin arvalid = 1; araddr = 32'h8; arready = 0; end
+      3: begin bvalid = 1; bresp = 2'b00; bready = 0; end
+      4: begin rvalid = 1; rdata = 32'h1234; rresp = 2'b00; rready = 0; end
+      default: $fatal(1, "ERROR: invalid VIOLATION parameter %0d", VIOLATION);
+    endcase
     @(negedge aclk);
-    awvalid = 0; // Deliberate violation: VALID drops before handshake.
+    // Break the stability rule before a handshake occurs.
+    case (VIOLATION)
+      0: awvalid = 0;
+      1: wdata = 32'h5678;
+      2: arvalid = 0;
+      3: bresp = 2'b10;
+      4: rdata = 32'h5678;
+    endcase
     @(negedge aclk);
-    $display("ERROR: monitor failed to catch injected AW violation");
+    $display("ERROR: monitor failed to catch injected violation %0d", VIOLATION);
     $finish;
   end
 
