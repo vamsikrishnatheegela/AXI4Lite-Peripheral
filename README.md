@@ -2,7 +2,7 @@
 
 A synthesizable memory-mapped peripheral and self-checking SystemVerilog testbench for learning practical RTL design and design verification.
 
-## Included
+## Verification status\n\nThe portable regression currently passes locally with Icarus Verilog: 91 functional checks, five protocol-monitor negative tests, 10 reset corner-case checks, and 150 checks across 50 randomized writes. Re-run the command below to reproduce these results on your machine. These results cover the implemented scenarios; they are not a claim of complete AXI4-Lite compliance.\n\n## Included
 - RTL implementation of an AXI4-Lite subordinate with a four-register bank.
 - Self-checking SystemVerilog testbench with a reference-model scoreboard, directed register tests, independent AW/W timing, byte strobes, response backpressure checks, reproducible pseudo-random register traffic, idle-reset regression, randomized channel delays/response backpressure, and portable functional-coverage counters.
 - Design specification, architecture notes, verification plan, and run script.
