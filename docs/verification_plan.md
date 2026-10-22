@@ -26,8 +26,12 @@ The shared module `tb/axi4lite_protocol_monitor.sv` checks AW/W/AR VALID persist
 ## Known gaps / future work
 - Constrained-random transactions and coverage closure.
 - Randomized backpressure and longer randomized stall durations.
-- Reset during an in-flight transaction.
+- Reset while BVALID is stalled, then verify response clearing and writable-register reset.
+- Reset while RVALID is stalled, then verify response clearing.
+- Reset after accepting AW but before W; verify the stale address cannot pair with post-reset write data.
 - UVM agent, sequencer, monitor, scoreboard, and sequences.
 - Formal protocol checks and integration with an AXI VIP.
-- Reset during an in-flight transaction remains to be tested.
 - Randomized backpressure and broader constrained-random traffic remain to be added.
+
+## Reset corner-case regression
+`tb/tb_reset_corner_cases.sv` separately checks reset while write and read responses are stalled, confirms response VALID clears, checks CONTROL returns to its reset value, and verifies a pre-reset AW cannot pair with post-reset W data. The top-level script runs this regression after the functional and protocol-negative tests.
