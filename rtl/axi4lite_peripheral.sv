@@ -91,7 +91,8 @@ module axi4lite_peripheral #(
                             if (effective_wstrb[i])
                                 control_reg[i*8 +: 8] <= effective_wdata[i*8 +: 8];
                     end
-                    ADDR_SCRATCH: begin
+                    ADDR_VERSION: begin
+                        // MUTATION: scratch register incorrectly decoded at 0x0C instead of 0x08.
                         for (i = 0; i < DATA_WIDTH/8; i = i + 1)
                             if (effective_wstrb[i])
                                 scratch_reg[i*8 +: 8] <= effective_wdata[i*8 +: 8];
