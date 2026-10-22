@@ -4,7 +4,7 @@ A synthesizable memory-mapped peripheral and self-checking SystemVerilog testben
 
 ## Included
 - RTL implementation of an AXI4-Lite subordinate with a four-register bank.
-- Directed self-checking testbench with checks for register access, byte strobes, independent AW/W timing, and invalid addresses.
+- Self-checking SystemVerilog testbench with a reference-model scoreboard, directed register tests, independent AW/W timing, byte strobes, response backpressure checks, and reproducible pseudo-random register traffic.
 - Design specification, architecture notes, verification plan, and run script.
 
 ## Register map
@@ -26,14 +26,14 @@ This project is educational and is not represented as production-qualified IP. R
 
 ## Layout
 - `rtl/axi4lite_peripheral.sv` — synthesizable peripheral RTL
-- `tb/tb_axi4lite_peripheral.sv` — self-checking directed testbench
+- `tb/tb_axi4lite_peripheral.sv` — self-checking testbench, reference model, scoreboard, directed and pseudo-random tests
 - `tb/axi4lite_assertions.sv` — protocol assertion module
 - `docs/` — specification, architecture, verification plan, learning roadmap
 - `scripts/run_tests.sh` — simulation runner
 
 ## Suggested extensions
-1. Add constrained-random traffic and coverage groups.
-2. Develop a UVM agent, sequences, monitor, scoreboard, and sequences.
+1. Expand randomized delays and add functional coverage.
+2. Develop a UVM agent, sequencer, sequences, monitor, and reusable scoreboard.
 3. Add synthesis and timing reports using a chosen RTL flow.
 
 ## License
