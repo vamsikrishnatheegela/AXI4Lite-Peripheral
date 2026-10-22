@@ -4,7 +4,7 @@ A synthesizable memory-mapped peripheral and self-checking SystemVerilog testben
 
 ## Included
 - RTL implementation of an AXI4-Lite subordinate with a four-register bank.
-- Self-checking SystemVerilog testbench with a reference-model scoreboard, directed register tests, independent AW/W timing, byte strobes, response backpressure checks, and reproducible pseudo-random register traffic.
+- Self-checking SystemVerilog testbench with a reference-model scoreboard, directed register tests, independent AW/W timing, byte strobes, response backpressure checks, reproducible pseudo-random register traffic, idle-reset regression, and portable functional-coverage counters.
 - Design specification, architecture notes, verification plan, and run script.
 
 ## Register map
