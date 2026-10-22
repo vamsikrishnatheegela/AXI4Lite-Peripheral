@@ -52,7 +52,7 @@ module tb_protocol_monitor_negative;
     endcase
     @(negedge aclk);
     // Break the stability rule before a handshake occurs.
-    case (VIOLATION)
+    case (violation)
       0: awvalid = 0;
       1: wdata = 32'h5678;
       2: arvalid = 0;
