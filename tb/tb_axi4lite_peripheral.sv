@@ -21,6 +21,38 @@ module tb_axi4lite_peripheral;
   wire s_axi_rvalid;
   logic s_axi_rready = 0;
   integer checks = 0;
+  integer random_iterations = 20;
+
+  // Independent reference model: the scoreboard's expected register state.
+  logic [31:0] model_control = 32'h0000_0000;
+  logic [31:0] model_scratch = 32'h0000_0000;
+  logic [31:0] model_read_data;
+  integer lane;
+
+  function automatic logic [31:0] model_value(input logic [31:0] addr);
+    case (addr)
+      32'h00: model_value = model_control;
+      32'h04: model_value = 32'h0000_0001;
+      32'h08: model_value = model_scratch;
+      32'h0C: model_value = 32'h0001_0000;
+      default: model_value = 32'h0000_0000;
+    endcase
+  endfunction
+
+  task automatic model_write(input logic [31:0] addr,
+                             input logic [31:0] data,
+                             input logic [3:0] strb);
+    integer b;
+    begin
+      case (addr)
+        32'h00: for (b = 0; b < 4; b = b + 1)
+          if (strb[b]) model_control[b*8 +: 8] = data[b*8 +: 8];
+        32'h08: for (b = 0; b < 4; b = b + 1)
+          if (strb[b]) model_scratch[b*8 +: 8] = data[b*8 +: 8];
+        default: ; // Read-only and unmapped registers do not change.
+      endcase
+    end
+  endtask
 
   always #5 aclk = ~aclk;
 
@@ -49,6 +81,7 @@ module tb_axi4lite_peripheral;
       s_axi_bready = 1;
       do @(posedge aclk); while (!s_axi_bvalid);
       if (s_axi_bresp !== expected_resp) $fatal(1, "WRITE response mismatch addr=%h expected=%b got=%b", addr, expected_resp, s_axi_bresp);
+      if (expected_resp == 2'b00) model_write(addr, data, strb);
       checks = checks + 1;
       @(negedge aclk); s_axi_bready = 0;
     end
@@ -63,6 +96,9 @@ module tb_axi4lite_peripheral;
       do @(posedge aclk); while (!s_axi_rvalid);
       if (s_axi_rresp !== expected_resp) $fatal(1, "READ response mismatch addr=%h expected=%b got=%b", addr, expected_resp, s_axi_rresp);
       if (s_axi_rdata !== expected_data) $fatal(1, "READ data mismatch addr=%h expected=%h got=%h", addr, expected_data, s_axi_rdata);
+      model_read_data = model_value(addr);
+      if (s_axi_rdata !== model_read_data)
+        $fatal(1, "SCOREBOARD mismatch addr=%h model=%h DUT=%h", addr, model_read_data, s_axi_rdata);
       checks = checks + 1;
       @(negedge aclk); s_axi_rready = 0;
     end
@@ -128,6 +164,7 @@ module tb_axi4lite_peripheral;
           $fatal(1, "WRITE response changed while stalled at addr=%h", addr);
         @(posedge aclk);
       end
+      if (expected_resp == 2'b00) model_write(addr, data, strb);
       checks = checks + 1;
       @(negedge aclk);
       s_axi_bready = 1'b1;
@@ -136,6 +173,11 @@ module tb_axi4lite_peripheral;
       s_axi_bready = 1'b0;
     end
   endtask
+
+  integer seed = 32'h4D415256;
+  logic [31:0] rand_data;
+  logic [3:0] rand_strb;
+  logic [31:0] rand_addr;
 
   initial begin
     repeat (3) @(posedge aclk);
@@ -159,7 +201,21 @@ module tb_axi4lite_peripheral;
     read_stall_tx(32'h08, 32'hA5A5_5A5A, 2'b00);
     read_stall_tx(32'h10, 32'h0000_0000, 2'b11);
 
-    $display("PASS: %0d transaction checks completed", checks);
+    // Reproducible pseudo-random register traffic, checked against the model.
+    for (integer n = 0; n < random_iterations; n = n + 1) begin
+      rand_addr = (($urandom(seed) & 1) == 0) ? 32'h00 : 32'h08;
+      rand_data = $urandom(seed);
+      rand_strb = $urandom(seed);
+      write_tx(rand_addr, rand_data, rand_strb, (n % 2), 2'b00);
+      read_tx(rand_addr, model_value(rand_addr), 2'b00);
+      // Cross-check the other writable register too after every write.
+      if (rand_addr == 32'h00)
+        read_tx(32'h08, model_value(32'h08), 2'b00);
+      else
+        read_tx(32'h00, model_value(32'h00), 2'b00);
+    end
+
+    $display("PASS: %0d checks completed (including %0d pseudo-random writes)", checks, random_iterations);
     $finish;
   end
 
