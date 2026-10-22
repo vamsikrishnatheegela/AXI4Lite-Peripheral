@@ -1,41 +1,22 @@
-# AXI4-Lite Peripheral
+## Verification Status
 
-A synthesizable memory-mapped peripheral and self-checking SystemVerilog testbench for learning practical RTL design and design verification.
+The regression suite runs with Icarus Verilog and includes:
 
-## Verification status\n\nThe portable regression currently passes locally with Icarus Verilog: 91 functional checks, five protocol-monitor negative tests, 10 reset corner-case checks, and 150 checks across 50 randomized writes. Re-run the command below to reproduce these results on your machine. These results cover the implemented scenarios; they are not a claim of complete AXI4-Lite compliance.\n\n## Included
-- RTL implementation of an AXI4-Lite subordinate with a four-register bank.
-- Self-checking SystemVerilog testbench with a reference-model scoreboard, directed register tests, independent AW/W timing, byte strobes, response backpressure checks, reproducible pseudo-random register traffic, idle-reset regression, randomized channel delays/response backpressure, and portable functional-coverage counters.
-- Design specification, architecture notes, verification plan, and run script.
+| Verification activity | Result |
+|---|---|
+| Functional scoreboard checks | 123 passed |
+| Byte-enable coverage | All 16 WSTRB patterns exercised and checked |
+| AXI protocol negative tests | 5 injected violations detected |
+| Reset corner cases | 10 checks passed |
+| Randomized stress regression | 150 checks across 50 writes |
+| Mutation testing | 6 of 6 selected RTL mutations detected |
 
-## Register map
-| Address | Register | Access | Reset/value |
-|---|---|---|---|
-| 0x00 | CONTROL | RW | 0x00000000 |
-| 0x04 | STATUS | RO | 0x00000001 |
-| 0x08 | SCRATCH | RW | 0x00000000 |
-| 0x0C | VERSION | RO | 0x00010000 |
+Additional checks cover independent AW/W channel arrival, unmapped-address DECERR responses, read-only registers, response backpressure, and randomized write/readback operations.
 
-The design supports byte write strobes on writable registers, independently arriving write address and data channels, OKAY responses for valid accesses, and DECERR for unmapped addresses. Writes to read-only registers are ignored.
+**Reproduce the regression:**
 
-## Run
-Install Icarus Verilog (`iverilog` and `vvp`), then run:
+```bash
+bash scripts/run_tests.sh
+```
 
-    bash scripts/run_tests.sh
-
-This project is educational and is not represented as production-qualified IP. Run it in your target simulator and review the RTL before using it in a real design. Full concurrent assertion support varies by simulator.
-
-## Layout
-- `rtl/axi4lite_peripheral.sv` — synthesizable peripheral RTL
-- `tb/tb_axi4lite_peripheral.sv` — self-checking testbench, reference model, scoreboard, directed and pseudo-random tests
-- `tb/tb_randomized_stress.sv` — randomized AW/W arrival delays and B/R response backpressure
-- `tb/axi4lite_assertions.sv` — protocol assertion module
-- `docs/` — specification, architecture, verification plan, learning roadmap
-- `scripts/run_tests.sh` — simulation runner
-
-## Suggested extensions
-1. Expand randomized delays and add functional coverage.
-2. Develop a UVM agent, sequencer, sequences, monitor, and reusable scoreboard.
-3. Add synthesis and timing reports using a chosen RTL flow.
-
-## License
-MIT. See `LICENSE`.
+The results describe the implemented tests and six selected mutations; they do not establish complete AXI4-Lite protocol compliance or exhaustive defect detection.
