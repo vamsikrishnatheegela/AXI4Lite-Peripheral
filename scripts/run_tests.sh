@@ -26,7 +26,7 @@ iverilog -g2012 -s tb_protocol_monitor_negative -o sim_build/tb_monitor_negative
   tb/axi4lite_protocol_monitor.sv tb/tb_protocol_monitor_negative.sv
 for i in "${!expected_messages[@]}"; do
   set +e
-  vvp -Ptb_protocol_monitor_negative.VIOLATION="$i" sim_build/tb_monitor_negative.vvp > "sim_build/monitor_negative_${i}.log" 2>&1
+  vvp sim_build/tb_monitor_negative.vvp +VIOLATION="$i" > "sim_build/monitor_negative_${i}.log" 2>&1
   negative_status=$?
   set -e
   if [[ $negative_status -eq 0 ]]; then
