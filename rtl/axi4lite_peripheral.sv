@@ -71,6 +71,8 @@ module axi4lite_peripheral #(
         end else begin
             if (s_axi_bvalid && s_axi_bready) s_axi_bvalid <= 1'b0;
             if (s_axi_rvalid && s_axi_rready) s_axi_rvalid <= 1'b0;
+            // MUTATION: deliberately corrupt RRESP while a read response is stalled.
+            if (s_axi_rvalid && !s_axi_rready) s_axi_rresp <= ~s_axi_rresp;
 
             if (s_axi_awvalid && s_axi_awready) begin
                 awaddr_q <= s_axi_awaddr;
