@@ -32,6 +32,8 @@ module tb_axi4lite_peripheral;
   integer cov_aw_first = 0, cov_w_first = 0;
   integer cov_read_decerr = 0, cov_write_decerr = 0;
   integer cov_read_stall = 0, cov_write_stall = 0;
+  integer cov_wstrb_pattern [0:15];
+  integer pattern;
 
   // Independent reference model: the scoreboard's expected register state.
   logic [31:0] model_control = 32'h0000_0000;
@@ -109,6 +111,7 @@ module tb_axi4lite_peripheral;
         32'h08: cov_write_scratch = cov_write_scratch + 1;
         default: cov_write_unmapped = cov_write_unmapped + 1;
       endcase
+      cov_wstrb_pattern[strb] = cov_wstrb_pattern[strb] + 1;
       if (strb == 4'h0) cov_strobe_zero = cov_strobe_zero + 1;
       else if (strb == 4'hF) cov_strobe_full = cov_strobe_full + 1;
       else cov_strobe_partial = cov_strobe_partial + 1;
@@ -223,6 +226,8 @@ module tb_axi4lite_peripheral;
   logic [31:0] rand_addr;
 
   initial begin
+    for (pattern = 0; pattern < 16; pattern = pattern + 1)
+      cov_wstrb_pattern[pattern] = 0;
     repeat (3) @(posedge aclk);
     @(negedge aclk); aresetn = 1;
     read_tx(32'h00, 32'h0000_0000, 2'b00);
@@ -256,6 +261,21 @@ module tb_axi4lite_peripheral;
     write_tx(32'h08, 32'hFFFF_FFFF, 4'h0, 1, 2'b00);
     // A zero strobe must leave every byte unchanged.
     read_tx(32'h08, 32'hA1B2_C3D4, 2'b00);
+
+    // Exhaustively exercise all 16 WSTRB patterns and compare every readback
+    // against the independent reference model.
+    for (pattern = 0; pattern < 16; pattern = pattern + 1) begin
+      write_tx(32'h08, 32'hC0DE_1200 | pattern, pattern[3:0],
+               pattern[0], 2'b00);
+      read_tx(32'h08, model_value(32'h08), 2'b00);
+    end
+    for (pattern = 0; pattern < 16; pattern = pattern + 1) begin
+      if (cov_wstrb_pattern[pattern] == 0)
+        $fatal(1, "COVERAGE ERROR: WSTRB pattern %04b was not exercised", pattern[3:0]);
+      $display("WSTRB coverage: pattern %04b hit %0d time(s)",
+               pattern[3:0], cov_wstrb_pattern[pattern]);
+    end
+    $display("PASS: all 16 WSTRB patterns exercised and scoreboard-checked.");
 
     // Verify that response VALID and payload remain stable under backpressure.
     write_stall_tx(32'h08, 32'hA5A5_5A5A, 4'hF, 2'b00);
