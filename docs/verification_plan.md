@@ -8,6 +8,8 @@
 - Full-word write/readback of SCRATCH.
 - Write to read-only STATUS followed by readback.
 - Read and write to an unmapped address; expect DECERR.
+- Hold BREADY low for multiple cycles and check BVALID/BRESP stability.
+- Hold RREADY low for multiple cycles and check RVALID/RDATA/RRESP stability, for both OKAY and DECERR responses.
 
 ## Pass criteria
 The simulation must complete without `$fatal`, and the testbench must print a PASS summary. Each read checks both RRESP and RDATA; each write checks BRESP.
@@ -17,7 +19,7 @@ The simulation must complete without `$fatal`, and the testbench must print a PA
 
 ## Known gaps / future work
 - Constrained-random transactions and coverage closure.
-- Randomized backpressure and long-stall scenarios.
+- Randomized backpressure and longer randomized stall durations.
 - Reset during an in-flight transaction.
 - UVM agent, sequencer, monitor, scoreboard, and sequences.
 - Formal protocol checks and integration with an AXI VIP.
