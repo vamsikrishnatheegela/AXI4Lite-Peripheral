@@ -23,6 +23,16 @@ module tb_axi4lite_peripheral;
   integer checks = 0;
   integer random_iterations = 20;
 
+  // Portable functional-coverage counters (compatible with Icarus Verilog).
+  integer cov_read_control = 0, cov_read_status = 0, cov_read_scratch = 0;
+  integer cov_read_version = 0, cov_read_unmapped = 0;
+  integer cov_write_control = 0, cov_write_status = 0, cov_write_scratch = 0;
+  integer cov_write_unmapped = 0;
+  integer cov_strobe_zero = 0, cov_strobe_full = 0, cov_strobe_partial = 0;
+  integer cov_aw_first = 0, cov_w_first = 0;
+  integer cov_read_decerr = 0, cov_write_decerr = 0;
+  integer cov_read_stall = 0, cov_write_stall = 0;
+
   // Independent reference model: the scoreboard's expected register state.
   logic [31:0] model_control = 32'h0000_0000;
   logic [31:0] model_scratch = 32'h0000_0000;
@@ -82,6 +92,18 @@ module tb_axi4lite_peripheral;
       do @(posedge aclk); while (!s_axi_bvalid);
       if (s_axi_bresp !== expected_resp) $fatal(1, "WRITE response mismatch addr=%h expected=%b got=%b", addr, expected_resp, s_axi_bresp);
       if (expected_resp == 2'b00) model_write(addr, data, strb);
+      case (addr)
+        32'h00: cov_write_control = cov_write_control + 1;
+        32'h04: cov_write_status = cov_write_status + 1;
+        32'h08: cov_write_scratch = cov_write_scratch + 1;
+        default: cov_write_unmapped = cov_write_unmapped + 1;
+      endcase
+      if (strb == 4'h0) cov_strobe_zero = cov_strobe_zero + 1;
+      else if (strb == 4'hF) cov_strobe_full = cov_strobe_full + 1;
+      else cov_strobe_partial = cov_strobe_partial + 1;
+      if (data_first) cov_w_first = cov_w_first + 1;
+      else cov_aw_first = cov_aw_first + 1;
+      if (expected_resp == 2'b11) cov_write_decerr = cov_write_decerr + 1;
       checks = checks + 1;
       @(negedge aclk); s_axi_bready = 0;
     end
@@ -99,6 +121,14 @@ module tb_axi4lite_peripheral;
       model_read_data = model_value(addr);
       if (s_axi_rdata !== model_read_data)
         $fatal(1, "SCOREBOARD mismatch addr=%h model=%h DUT=%h", addr, model_read_data, s_axi_rdata);
+      case (addr)
+        32'h00: cov_read_control = cov_read_control + 1;
+        32'h04: cov_read_status = cov_read_status + 1;
+        32'h08: cov_read_scratch = cov_read_scratch + 1;
+        32'h0C: cov_read_version = cov_read_version + 1;
+        default: cov_read_unmapped = cov_read_unmapped + 1;
+      endcase
+      if (expected_resp == 2'b11) cov_read_decerr = cov_read_decerr + 1;
       checks = checks + 1;
       @(negedge aclk); s_axi_rready = 0;
     end
@@ -125,6 +155,7 @@ module tb_axi4lite_peripheral;
           $fatal(1, "READ response changed while stalled at addr=%h", addr);
         @(posedge aclk);
       end
+      cov_read_stall = cov_read_stall + 1;
       checks = checks + 1;
       @(negedge aclk);
       s_axi_rready = 1'b1;
@@ -165,6 +196,7 @@ module tb_axi4lite_peripheral;
         @(posedge aclk);
       end
       if (expected_resp == 2'b00) model_write(addr, data, strb);
+      cov_write_stall = cov_write_stall + 1;
       checks = checks + 1;
       @(negedge aclk);
       s_axi_bready = 1'b1;
@@ -215,6 +247,24 @@ module tb_axi4lite_peripheral;
         read_tx(32'h00, model_value(32'h00), 2'b00);
     end
 
+    // Reset during idle, then confirm writable state returns to reset values.
+    @(negedge aclk); aresetn = 1'b0;
+    model_control = 0; model_scratch = 0;
+    repeat (2) @(posedge aclk);
+    @(negedge aclk); aresetn = 1'b1;
+    read_tx(32'h00, 32'h0000_0000, 2'b00);
+    read_tx(32'h08, 32'h0000_0000, 2'b00);
+
+    $display("\n--- FUNCTIONAL COVERAGE COUNTERS ---");
+    $display("Read addresses: CONTROL=%0d STATUS=%0d SCRATCH=%0d VERSION=%0d UNMAPPED=%0d",
+      cov_read_control, cov_read_status, cov_read_scratch, cov_read_version, cov_read_unmapped);
+    $display("Write addresses: CONTROL=%0d STATUS=%0d SCRATCH=%0d UNMAPPED=%0d",
+      cov_write_control, cov_write_status, cov_write_scratch, cov_write_unmapped);
+    $display("WSTRB classes: zero=%0d full=%0d partial=%0d",
+      cov_strobe_zero, cov_strobe_full, cov_strobe_partial);
+    $display("Write ordering: AW-first=%0d W-first=%0d", cov_aw_first, cov_w_first);
+    $display("DECERR responses: reads=%0d writes=%0d", cov_read_decerr, cov_write_decerr);
+    $display("Backpressure tests: read=%0d write=%0d", cov_read_stall, cov_write_stall);
     $display("PASS: %0d checks completed (including %0d pseudo-random writes)", checks, random_iterations);
     $finish;
   end
